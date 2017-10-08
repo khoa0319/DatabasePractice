@@ -49,7 +49,6 @@ insert into DMMH
 values('05', N'Văn phạm', 60)
 insert into DMMH 
 values('06', N'Kỹ thuật lập trình', 45)
-delete from DMMH
 -----------------------
 insert into DMKHOA
 values('AV', N'Anh Văn')
@@ -73,7 +72,6 @@ insert into DMSV
 values('B01', N'Trần Thanh', N'Mai', '1', N'08-12-1993', N'Hà Nội', 'TR', 0)
 insert into DMSV
 values('B02', N'Trần Thị Thu', N'Thủy', '1', N'01-02-1994', N'Hà Nội', 'AV', 0)
-delete from DMSV
 -----------------------------------------
 insert into KETQUA
 values('A01','01', 1, 3)
@@ -129,7 +127,6 @@ alter table DMSV add constraint FK_MAKH_MAKHOA_12345 foreign key (MAKH) referenc
 --4.1
 --4.2
 Update DMMH set SOTIET = 45 where TENMH = N'Văn phạm'
-select * from DMMH
 --4.3
 update DMSV set TENSV = N'Kỳ' where TENSV = N'Mai'
 --4.4
@@ -255,4 +252,25 @@ where YEAR(GETDATE() - YEAR(NGAYSINH)) > 20
 --Danh sách những sinh viên có tuổi từ 20 đến 25, thông tin gồm: Họ tên sinh viên, Tuổi, Tên khoa.
 select * from DMSV
 where YEAR(GETDATE() - YEAR(NGAYSINH)) between 20 and 25
---3.4
+--3.4 Danh sách sinh viên sinh vào mùa xuân năm 1990
+--Thông tin: Họ Tên, Phái, Ngày sinh
+select HOSV + ' ' + TENSV as [Full Name], PHAI, DAY(NGAYSINH) as Birthday 
+from DMSV
+where MONTH(NGAYSINH) between 1 and 3
+
+--3.5
+SELECT MASV, PHAI, MAKH,
+MucHocBong = CASE 
+WHEN HocBong > 500000
+then 'HOC BONG CAO' else 'HOC BONG THAP'
+end	
+FROM DMSV
+--3.6 Cho biết kết quả điểm thi của từng sinh viên
+--gồm các thông tin: Họ Tên, Mã MH, Lần Thi, Điểm, Kết quả (điểm < 5 là rớt và ngược lại)
+select HOSV + ' ' + TENSV as [Ten SV], MAMH, LANTHI, DIEM,
+KETQUA = CASE WHEN DIEM < 5
+THEN N'Rớt' ELSE N'Đậu'
+END
+from DMSV,KETQUA
+where DMSV.MASV = KETQUA.MASV
+-----------------------------------------------------------------------
