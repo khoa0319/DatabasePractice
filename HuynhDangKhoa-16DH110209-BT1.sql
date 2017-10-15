@@ -1,40 +1,41 @@
-create database QLDIEM
-use QLDIEM
+create database QLDiem
+use QLDiem
 go;
 
 create table DMSV
 (
-	MASV char(3) primary key,
-	HOSV nvarchar(30),
-	TENSV nvarchar (10),
-	PHAI bit,
-	NGAYSINH date,
-	NOISINH nvarchar(25),
-	MAKH Char(2),
-	HOCBONG float
+	MaSV char(3) primary key,
+	HoSV nvarchar(30),
+	TenSV nvarchar (10),
+	Phai bit,
+	NgaySinh date,
+	NoiSinh nvarchar(25),
+	MaKH Char(2),
+	HocBong float
 )
-alter table DMSV add constraint FK_MAKH_MAKHOA_12345 foreign key(MAKH) references DMKHOA(MAKHOA)
 
 create table DMMH 
 (
-	MAMH Char(2) primary key,
-	TENMH nvarchar(30),
-	SOTIET tinyint
+	MaMH Char(2) primary key,
+	TenMH nvarchar(30),
+	SoTiet tinyint
 )
 
 create table DMKHOA
 (
-	MAKHOA Char(2) primary key,
-	TENKHOA nvarchar(20)
+	MaKhoa Char(2) primary key,
+	TenKhoa nvarchar(20)
 )
+
+alter table DMSV add constraint FK_MAKH_MAKHOA_12345 foreign key(MaKH) references DMKHOA(MaKhoa)
 
 create table KETQUA
 (
-	MASV char(3) foreign key references DMSV(MASV),
-	MAMH char(2) foreign key references DMMH(MAMH),
-	LANTHI tinyint,
-	DIEM decimal(4, 2),
-	primary key (MASV, MAMH, LANTHI)
+	MaSV char(3) foreign key references DMSV(MaSV),
+	MaMH char(2) foreign key references DMMH(MaMH),
+	LanThi tinyint,
+	Diem decimal(4, 2),
+	primary key (MaSV, MaMH, LanThi)
 )
 ------------------------------------------
 insert into DMMH 
@@ -58,7 +59,6 @@ insert into DMKHOA
 values('TR', N'Triết')
 insert into DMKHOA
 values('VL', N'Vật Lý')
-select * from DMKHOA
 -------------------------------
 insert into DMSV
 values('A01', N'Nguyễn Thị', N'Hải', '1', N'02-23-1993', N'Hà Nội', 'TH', 130000)
@@ -109,7 +109,7 @@ insert into KETQUA
 values('B02','02', 1, 6)
 insert into KETQUA
 values('B02','04', 1, 10)
---delete from DMSV
+-----------------------------------------
 --3.1
 alter table DMKHOA add NamTL int
 select * from DMKHOA
@@ -124,83 +124,85 @@ alter table DMKHOA drop column NamThanhLap
 alter table DMSV drop constraint FK_MAKH_MAKHOA_12345
 --3.6
 alter table DMSV add constraint FK_MAKH_MAKHOA_12345 foreign key (MAKH) references DMKHOA(MAKHOA)
+---------------------------------------
 --4.1
 --4.2
-Update DMMH set SOTIET = 45 where TENMH = N'Văn phạm'
+Update DMMH set SoTiet = 45 where TenMH = N'Văn phạm'
 --4.3
-update DMSV set TENSV = N'Kỳ' where TENSV = N'Mai'
+update DMSV set TenSV = N'Kỳ' where TenSV = N'Mai'
 --4.4
-update DMSV set PHAI = 1 where TENSV = N'Kỳ'
+update DMSV set Phai = 1 where TenSV = N'Kỳ'
 --4.5
-update DMSV set NGAYSINH = '07-05-1997' where TENSV = N'Thủy'
+update DMSV set NgaySinh = '07-05-1997' where TenSV = N'Thủy'
 --4.6
-update DMSV set HOCBONG = HOCBONG + 100000 where MAKH = 'AV'
+update DMSV set HocBong = HocBong + 100000 where MaKH = 'AV'
 --4.7 Xoá tất cả những dòng có điểm thi lần 2 nhỏ hơn 5 trong bảng KETQUA.
 delete from KETQUA 
-where LANTHI = 2 and DIEM < 5
+where LanThi = 2 and Diem < 5
 ----------------------------------
 -------------------------------
 ----------------------------
 ------------------------
 --------------------
 --1.1 Danh sách các môn học có tên bắt đâu bằng chư T, gồm các thông tin: Mã môn, Tên môn, Sô tiêt.
-select MAMH, TENMH, SOTIET from DMMH
-where TENMH like N'T%'
+select MaMH, TenMH, SoTiet from DMMH
+where TenMH like N'T%'
 go;
 
 --1.2 Liệt kê danh sách nhưng sinh viên có chư cái cuôi cùng trong tên la I, gồm các thông 
 --tin: Họ tên sinh viên, Ngay sinh, Phái.
 
-select CONCAT(HOSV, TENSV) as FullName, NGAYSINH, PHAI from DMSV
-where TENSV like N'%I'
+select CONCAT(HoSV, TenSV) as FullName, NgaySinh, Phai from DMSV
+where TenSV like N'%I'
 
 --1.3 Danh sách nhưng khoa có ký tự thư hai của tên khoa có chưa chư N, 
 --gồm các thông tin: Mã khoa, Tên khoa.
 select * from DMKHOA
-where TENKHOA like N'_n%'
+where TenKhoa like N'_n%'
 
 --1.4 Liệt kê nhưng sinh viên mà họ có chưa chư Thị.
-select * from DMSV where HOSV like N'%Thị%'
+select * from DMSV where HoSV like N'%Thị%'
 
 --1.5 Cho biêt danh sách nhưng sinh viên có ký tự đâu tiên của tên nằm trong khoảng từ a
 --đên m, gồm các thông tin: Mã sinh viên, Họ tên sinh viên, Phái, Học bông.
-select MASV, HOSV + ' ' + TENSV as FullName, PHAI, HOCBONG from DMSV
-where LEFT(TENSV,1) between 'A' and 'M'
+select MaSV, HoSV + ' ' + TenSV as FullName, Phai, HocBong from DMSV
+where LEFT(TenSV,1) between 'A' and 'M'
 
 --1.6 Liệt kê các sinh viên có học bông từ 150000 trơ lên va sinh ơ Ha Nội, 
 --gồm các thông tin: Họ tên sinh viên, Mã khoa, Nơi sinh, Học bông.
-select HOSV, TENSV, MAKH, NOISINH, HOCBONG from DMSV
-where NOISINH = N'Hà Nội' and HOCBONG > 150000
+select HoSV, TenSV, MaKH, NoiSinh, HocBong from DMSV
+where NoiSinh = N'Hà Nội' and HocBong > 150000
 
 --1.7 Danh sách các sinh viên của khoa AV văn va khoa VL, 
 --gồm các thông tin: Mã sinh viên, Mã khoa, Phái.
-select MASV, MAKH, PHAI from DMSV
-where MAKH = 'AV' or MAKH = 'VL'
+select MaSV, MaKH, Phai from DMSV
+where MaKH = 'AV' or MaKH = 'VL'
 
 --1.8 Cho biêt nhưng sinh viên có ngay sinh từ ngay 01/01/1992 đên ngay 05/06/1993
 --gồm các thông tin: Mã sinh viên, Ngay sinh, Nơi sinh, Học bông.
-select MASV, NGAYSINH, NOISINH, HOCBONG from DMSV
-where NGAYSINH between '1/1/1992' and '5/6/1993'
+select MaSV, NgaySinh, NoiSinh, HocBong from DMSV
+where NgaySinh between '1/1/1992' and '5/6/1993'
 select * from DMSV
 
 --1.9 Danh sách nhưng sinh viên có học bông từ 80.000 đên 150.000, 
 --gồm các thông tin: Mã sinh viên, Ngay sinh, Phái, Mã khoa.
-select MASV, NGAYSINH, PHAI, MAKH, HOCBONG from DMSV
-where HOCBONG >= 80000 and HOCBONG <= 150000
+select MaSV, NgaySinh, Phai, MaKH, HocBong from DMSV
+where HocBong >= 80000 and HocBong <= 150000
 
 --1.10 Cho biêt nhưng môn học có sô tiêt lớn hơn 30 va nhỏ hơn 45, 
 --gồm các thông tin: Mã môn học, Tên môn học, Sô tiêt.
-select MAMH, TENMH, SOTIET from DMMH
-where SOTIET > 30 and SOTIET < 45
+select MaMH, TenMH, SoTiet from DMMH
+where SoTiet > 30 and SoTiet < 45
 go;
 --1.11 Liệt kê nhưng sinh viên nam của khoa Anh văn và khoa tin học, 
 --gồm các thông tin: Mã sinh viên, Họ tên sinh viên, tên khoa, Phái.
-select MASV, HOSV, TENSV, DMKHOA.TENKHOA from DMSV inner join DMKHOA
-on DMSV.MAKH = DMKHOA.MAKHOA
-where DMKHOA.MAKHOA in 
+select MaSV, HoSV, TenSV, DMKHOA.TenKhoa from DMSV inner join DMKHOA
+on DMSV.MaKH = DMKHOA.MaKhoa
+where DMKHOA.MaKhoa in 
 	(
-		select MAKHOA from DMKHOA where TENKHOA in (N'Anh Văn', N'Tin Học') and PHAI = '0'
+		select MaKhoa from DMKHOA where TenKhoa in (N'Anh Văn', N'Tin Học') and Phai = '0'
 	)
+	go;
 --1.12 Liệt kê nhưng sinh viên có điểm thi môn sơ sơ dư liệu nhỏ hơn 5, 
 --gồm thông tin: Mã sinh viên, Họ tên, phái, điểm
 
@@ -212,54 +214,59 @@ select MASV from KETQUA where MAMH =
 
 --1.13 Liệt kê nhưng sinh viên học khoa Anh văn mà không có học bổng, 
 --gồm thông tin: Mã sinh viên, Họ và tên, tên khoa, Nơi sinh, Học bổng.
-select MASV, HOSV, TENSV, TENKHOA, NOISINH, HOCBONG from DMSV inner join DMKHOA on DMSV.MAKH = DMKHOA.MAKHOA
-where DMKHOA.MAKHOA = (select MAKHOA from DMKHOA where TENKHOA = N'Anh Văn')
+select MaSV, HoSV, TenSV, TenKhoa, NoiSinh, HocBong from DMSV inner join DMKHOA on DMSV.MaKH = DMKHOA.MaKhoa
+where DMKHOA.MaKhoa = (select MaKhoa from DMKHOA where TenKhoa = N'Anh Văn')
 
 --sắp xếp Order by
 --2.1 Cho biết danh sách những sinh viên mà tên có chứa ký tự nằm trong khoảng từ a đến m, 
 --gồm các thông tin: Họ tên sinh viên, Ngày sinh, Nơi sinh. Danh sách được sắp xếp tăng dần theo tên sinh viên.
-select (HOSV +' ' + TENSV) as FullName, NGAYSINH, NOISINH from DMSV
-where TENSV like '%[A-M]%'
-order by TENSV
+select (HoSV +' ' + TenSV) as FullName, NgaySinh, NoiSinh 
+from DMSV
+where TenSV like '%[A-M]%'
+order by TenSV
 
 --2.2
 --Liệt kê danh sách sinh viên, gồm các thông tin sau: Mã sinh viên, Họ sinh viên, Tên sinh viên, Học bổng. 
 --Danh sách sẽ được sắp xếp theo thứ tự Mã sinh viên tăng dần.
-select MASV, HOSV, TENSV, HOCBONG from DMSV
-order by MASV
+select MaSV, HoSV, TenSV, HocBong from DMSV
+order by MaSV
 
 --2.3
 --Thông tin các sinh viên gồm: Họ tên sinh viên, Ngày sinh, Học bổng. 
 --Thông tin sẽ được sắp xếp theo thứ tự Ngày sinh tăng dần và Học bổng giảm dần.
-select HOSV + ' ' + TENSV as FullName, NGAYSINH, HOCBONG from DMSV
-order by NGAYSINH asc, HOCBONG desc;
+select HoSV + ' ' + TenSV as FullName, NgaySinh, HocBong from DMSV
+order by NgaySinh asc, HocBong desc;
 --2.4
 --Cho biết danh sách các sinh viên có học bổng lớn hơn 100,000, gồm các thông tin:
 --Mã sinh viên, Họ tên sinh viên, Mã khoa, Học bổng. Danh sách sẽ được sắp xếp theo thứ tự Mã khoa giảm dần.
-select MASV, HOSV + ' ' + TENSV, MAKH, HOCBONG from DMSV
-where HOCBONG > 100000
-order by MAKH
+select MaSV, HoSV + ' ' + TenSV, MaKH, HocBong from DMSV
+where HocBong > 100000
+order by MaKH
+
+----------------------------------------------------------------------------------
+--9/10/2017
+
 --3.1
 --Danh sách sinh viên có nơi sinh ở Hà Nội và sinh vào tháng 02, gồm các thông tin:
 --Họ sinh viên, Tên sinh viên, Nơi sinh, Ngày sinh.
 select * from DMSV
-where NOISINH = N'Hà Nội' and MONTH(NGAYSINH) = 2
+where NoiSinh = N'Hà Nội' and MONTH(NgaySinh) = 2
 --3.2
 --Cho biết những sinh viên có tuổi lớn hơn 20, thông tin gồm: Họ tên sinh viên, Tuổi, Học bổng.
 select * from DMSV
-where YEAR(GETDATE() - YEAR(NGAYSINH)) > 20
+where YEAR(GETDATE() - YEAR(NgaySinh)) > 20
 --3.3
 --Danh sách những sinh viên có tuổi từ 20 đến 25, thông tin gồm: Họ tên sinh viên, Tuổi, Tên khoa.
 select * from DMSV
-where YEAR(GETDATE() - YEAR(NGAYSINH)) between 20 and 25
+where YEAR(GETDATE() - YEAR(NgaySinh)) between 20 and 25
 --3.4 Danh sách sinh viên sinh vào mùa xuân năm 1990
 --Thông tin: Họ Tên, Phái, Ngày sinh
-select HOSV + ' ' + TENSV as [Full Name], PHAI, DAY(NGAYSINH) as Birthday 
+select HoSV + ' ' + TenSV as [Full Name], Phai, DAY(NgaySinh) as Birthday 
 from DMSV
-where MONTH(NGAYSINH) between 1 and 3
-
+where Datepart(qq, NgaySinh) = 1
+select * from DMSV
 --3.5
-SELECT MASV, PHAI, MAKH,
+SELECT MaSV, Phai, MaKH,
 MucHocBong = CASE 
 WHEN HocBong > 500000
 then 'HOC BONG CAO' else 'HOC BONG THAP'
@@ -267,10 +274,24 @@ end
 FROM DMSV
 --3.6 Cho biết kết quả điểm thi của từng sinh viên
 --gồm các thông tin: Họ Tên, Mã MH, Lần Thi, Điểm, Kết quả (điểm < 5 là rớt và ngược lại)
-select HOSV + ' ' + TENSV as [Ten SV], MAMH, LANTHI, DIEM,
-KETQUA = CASE WHEN DIEM < 5
+select HoSV + ' ' + TenSV as [Ho Ten SV], MaMH, LanThi, Diem,
+KetQua = CASE WHEN Diem < 5
 THEN N'Rớt' ELSE N'Đậu'
 END
 from DMSV,KETQUA
-where DMSV.MASV = KETQUA.MASV
+where DMSV.MaSV = KETQUA.MaSV
+
 -----------------------------------------------------------------------
+
+--4.1 Cho biết tổng số sinh viên của toàn trường
+select count(*) as SLSV
+from DMSV
+
+--4.2 Cho biết tổng số sinh viên và tổng số sinh viên nữ
+select COUNT(*) as N'Tổng số sinh viên', COUNT(Phai) as N'số sinh viên nữ'
+from DMSV
+group by Phai
+having Phai = 1
+
+
+
