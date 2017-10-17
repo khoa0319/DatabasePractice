@@ -263,8 +263,7 @@ where YEAR(GETDATE() - YEAR(NgaySinh)) between 20 and 25
 --Thông tin: Họ Tên, Phái, Ngày sinh
 select HoSV + ' ' + TenSV as [Full Name], Phai, DAY(NgaySinh) as Birthday 
 from DMSV
-where Datepart(qq, NgaySinh) = 1
-select * from DMSV
+where Datepart(q, NgaySinh) = 1 and YEAR(NgaySinh) = 1993
 --3.5
 SELECT MaSV, Phai, MaKH,
 MucHocBong = CASE 
@@ -282,16 +281,61 @@ from DMSV,KETQUA
 where DMSV.MaSV = KETQUA.MaSV
 
 -----------------------------------------------------------------------
-
+--16/10/2017
 --4.1 Cho biết tổng số sinh viên của toàn trường
 select count(*) as SLSV
 from DMSV
 
 --4.2 Cho biết tổng số sinh viên và tổng số sinh viên nữ
-select COUNT(*) as N'Tổng số sinh viên', COUNT(Phai) as N'số sinh viên nữ'
+select Count(*) as TongSV, SVNu = Sum (case when Phai = 1 then 1 else 0 end)
 from DMSV
-group by Phai
-having Phai = 1
+
+--4.3 Cho biết tổng số sv của từng khoa
+select k.MaKhoa, k.TenKhoa, COUNT(*) as SoSV
+from DMKHOA as k inner join DMSV as s on k.MaKhoa = s.MaKH
+group by k.TenKhoa, k.MaKhoa
+
+--4.4 Cho biết số lượng sinh viên học từng môn
+select  d.TenMH, d.MaMH, Count(distinct MaSV) as SoLuong
+from DMMH d inner join KETQUA k on d.MaMH = k.MaMH
+group by d.TenMH, d.MaMH
+
+select * from KETQUA
+--4.5
+--Cho biết số lượng môn học mà mỗi sinh viên đã học
 
 
+select s.MaSV, s.HoSV + ' ' + s.TenSV as HoTenSV, count(Distinct MaMH) as SoLuong
+from KETQUA k, DMSV s
+where k.MaSV = s.MaSV
+group by s.MaSV, s.HoSV, s.TenSV
+
+--4.6
+--Cho biết học bổng cao nhất của mỗi khoa
+select k.MaKhoa, k.TenKhoa, MAX(HocBong) as HocBong
+from DMSV d, DMKHOA k
+where d.MaKH = k.MaKhoa
+group by k.MaKhoa, k.TenKhoa
+
+--4.7
+--Cho biết tổng số sv nam và nữ của mỗi khoa
+select SVNam = Sum(case when Phai = 0 then 1 else 0 end), SVNu = Sum(case when Phai = 1 then 1 else 0 end), k.TenKhoa, k.MaKhoa
+from DMKHOA k, DMSV s
+where k.MaKhoa = s.MaKH
+group by k.TenKhoa, k.MaKhoa
+
+--4.8
+--Cho biết số lượng sinh viên theo từng độ tuổi
+select (Year(GETDATE()) - YEAR(NgaySinh)) as DoTuoi, Count(*) as SoLuongSV
+from DMSV
+group by Year(GETDATE()) - YEAR(NgaySinh)
+
+--4.9
+--Cho biết số lượng sv đậu và sv rớt của từng môn học trong lần thi 1
+select h.MaMH, h.TenMH, SVDau = SUM(case when Diem >= 5 and LanThi = 1 then 1 else 0 end),
+						SVRot = SUM(case when Diem < 5 and LanThi = 1 then 1 else 0 end)
+from KETQUA k, DMMH h
+where k.MaMH = h.MaMH 
+and LanThi = 1
+group by h.MaMH, H.TenMH
 
