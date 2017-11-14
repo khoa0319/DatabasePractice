@@ -1,6 +1,5 @@
 create database QLDiem
 use QLDiem
-go;
 
 create table DMSV
 (
@@ -72,6 +71,10 @@ insert into DMSV
 values('B01', N'Trần Thanh', N'Mai', '1', N'08-12-1993', N'Hà Nội', 'TR', 0)
 insert into DMSV
 values('B02', N'Trần Thị Thu', N'Thủy', '1', N'01-02-1994', N'Hà Nội', 'AV', 0)
+insert into DMSV
+values('B03', N'Nguyễn Huy', N'Hùng', '0', N'03-25-1995', N'Hà Nội', 'TH', 1000000)
+insert into DMSV
+values('B04', N'Phạm Huy', N'Hoàng', '0', N'06-8-1995', N'Tp HCM', 'TH', 1200000)
 -----------------------------------------
 insert into KETQUA
 values('A01','01', 1, 3)
@@ -109,6 +112,14 @@ insert into KETQUA
 values('B02','02', 1, 6)
 insert into KETQUA
 values('B02','04', 1, 10)
+insert into KETQUA
+values('B02', '03', 2, 4.5)
+insert into KETQUA
+values('B02', '05', 2, 1.5)
+insert into KETQUA
+values('B03', '01', 2, 4.5)
+insert into KETQUA
+values('B03', '05', 2, 2.5)
 -----------------------------------------
 --3.1
 alter table DMKHOA add NamTL int
@@ -339,3 +350,377 @@ where k.MaMH = h.MaMH
 and LanThi = 1
 group by h.MaMH, H.TenMH
 
+--5.1
+--Cho biết năm sinh nào có 2 sinh viên đang theo học tại trường.
+select YEAR(NgaySinh) as NamSinh, COUNT(MaSV) as SoSV
+from DMSV
+group by YEAR(NgaySinh)
+having COUNT(MaSV) = 2
+
+--5.2
+--Cho biết nơi nào có hơn 2 sinh viên đang theo học tại trường
+select k.MaKhoa, COUNT(*) as SoSV
+from DMSV s inner join DMKHOA k on s.MaKH = k .MaKhoa
+group by k.MaKhoa
+having COUNT(*) >= 2
+
+--5.3
+--cho biết môn nào có trên 3 sinh viên dự thi
+select d.TenMH, d.MaMH , Count(distinct k.MaSV) as SoSV
+from KETQUA k inner join DMMH d on k.MaMH = d.MaMH
+group by d.TenMH, d.MaMH
+having Count(distinct k.MaSV) >= 3
+
+--5.4
+--Cho biết sinh viên thi lại trên 2 lần
+select * from KETQUA
+select k.MaSV, d.HoSV, d.TenSV, k.MaMH, count(LanThi) as SoLanThi
+from KETQUA k inner join DMSV d on k.MaSV = d.MaSV
+group by k.MaSV, d.HoSV, d.TenSV, k.MaMH
+having COUNT(LanThi) >= 2
+
+SELECT	s.MaSV,HoSV+' '+TenSV as HoTenSV,AVG(Diem) as DTB
+FROM	DMSV s ,KETQUA k
+where	s.MaSV=k.MaSV and Phai ='0'  and  LanThi=1
+GROUP BY	s.MaSV,HoSV+' '+TenSV
+HAVING AVG(Diem)>=7.0
+
+--5.6
+select s.MaSV,HoSV+' '+TenSV AS HoTenSV,MonRot=sum(case when Diem<5 then 1 else 0 end)
+from	DMSV S,KETQUA K
+where s.MaSV=k.MaSV and LanThi=1
+GROUP by  s.MaSV,HoSV+' '+TenSV 
+having sum(case when Diem<5 then 1 else 0 end)>=2
+
+--5.7
+select	k.MaKhoa,TenKhoa,SVNam=SUM(case when Phai='0' then 1 else 0 end)
+from	DMKHOA k ,DMSV s
+where	k.MaKhoa=s.MaKH
+GROUP by	k.MaKhoa,TenKhoa
+having	SUM(case when Phai='0' then 1 else 0 end)>=2
+
+--5.8
+select	k.MaKhoa,TenKhoa,SVDatHocBong=SUM(case when HocBong between '100000' and '200000' then 1 else 0 end)	
+from	DMKHOA k , DMSV s
+where k.MaKhoa=s.MaKH
+GROUP by	k.MaKhoa,TenKhoa
+having	SUM(case when HocBong between '100000' and '200000' then 1 else 0 end)>=2
+
+--5.9
+select	s.MaSV,HoSV+' '+TenSV as HoTenSV,s.Phai,COUNT(MaMH) as MonHoc
+from	DMSV s,KETQUA k
+where s.MaSV=k.MaSV and Phai='0'
+GROUP by	s.MaSV,HoSV+' '+TenSV,s.Phai
+having	COUNT(MaMH)>=3
+
+--5.10
+select	s.MaSV,HoSV+' '+TenSV as hotensv,AVG(Diem) as DTB,MonRot=sum(case when Diem<5 then 1 else 0 end) 
+from	DMSV s,KETQUA k
+where	s.MaSV=k.MaSV	and LanThi=1
+GROUP by	s.MaSV,HoSV+' '+TenSV
+having	AVG(Diem)>=7 and sum(case when Diem<5 then 1 else 0 end)=0
+
+--5.11
+select	m.MaMH,TenMH,MonRot=SUM(case when Diem<5 then 1 else 0 end)
+from	DMMH m,KETQUA k
+where	m.MaMH=k.MaMH and LanThi=1
+GROUP by	m.MaMH,TenMH
+having	SUM(case when Diem<5 then 1 else 0 end)=0
+
+--5.12
+select	s.MaSV,HoSV+' '+TenSV as hotensv,MonRot=sum(case when Diem<5 then 1 else 0 end)  
+from	KETQUA k ,DMSV s
+where	s.MaSV=k.MaSV and LanThi=1
+GROUP by	s.MaSV,HoSV+' '+TenSV
+having COUNT(MaMH)>= 3	and sum(case when Diem<5 then 1 else 0 end)=0
+
+-----------------------------------------------
+--23/10/2017
+--6.1
+--cho biet sinh vien nao co hoc bong cao nhat
+select *
+from DMSV
+where HocBong = 
+	(
+		select Max(HocBong)
+		from DMSV
+	)
+--6.2
+--Cho biết những sinh viên có điểm thi lần 1 môn cơ sở dữ liệu cao nhất
+select *
+from DMSV s,KETQUA k, DMMH h
+where s.MaSV = k.MaSV and k.MaMH = h.MaMH and k.LanThi = 1 and h.TenMH = N'Cơ sở dữ liệu'
+and k.Diem =(
+			select Max(Diem)
+			from KETQUA k inner join DMMH m on k.MaMH = m.MaMH
+			where m.TenMH = N'Cơ sở dữ liệu' and k.LanThi = 1
+			)
+--6.3
+select d.*, Year(getdate()) - year(NgaySinh) as Tuoi
+from DMSV d inner join DMKHOA k on d.MaKH = k.MaKhoa
+where Year(getdate()) - year(NgaySinh) = (
+	select Max(Year(Getdate()) - Year(NgaySinh)) as TuoiLonNhat
+	from DMSV
+	where MaKH = (
+		select MaKhoa
+		from DMKHOA
+		where TenKhoa = N'Anh văn'
+	)
+)and k.TenKhoa = N'Anh Văn'
+
+--6.4Cho biet nhung sinh vien co cung noi sinh vs nhung sinh vien co ma so 'A01'
+select *
+from DMSV
+where NoiSinh =(
+	select NoiSinh
+	from DMSV
+	where MaSV = 'A01'
+)
+
+--6.5
+--Cho biết sinh viên khoa anh văn học môn văn phạm có điểm thi lần 1 thấp nhất
+select *
+from DMSV s inner join DMKHOA d on s.MaKH = d.MaKhoa inner join KETQUA k on k.MaSV = s.MaSV
+where k.LanThi = 1 and d.TenKhoa = N'Anh Văn'
+and k.Diem = (
+	select MIN(k.Diem)
+	from KETQUA k inner join DMMH h on k.MaMH = h.MaMH
+	where LanThi = 1 and h.TenMH = N'Văn phạm'
+	)
+--6.6
+--Cho biết sinh viên thi môn CSDL lần 2 có điểm bằng điểm cao nhất của sinh viên thi môn
+--cơ sở dữ liệu lần 1
+select *
+from DMSV s inner join KETQUA k on s.MaSV = k.MaSV inner join DMMH q on q.MaMH = k.MaMH
+where k.LanThi = 2 and q.TenMH = N'Cơ sở dữ liệu'
+and Diem = (
+	select MAX(Diem)
+	from KETQUA k inner join DMMH d on k.MaMH = d.MaMH
+	where LanThi = 1 and d.TenMH = N'Cơ sở dữ liệu'
+	)
+--6.7
+select *
+from DMSV s inner join KETQUA k on s.MaSV = k.MaSV inner join DMMH q on q.MaMH = k.MaMH
+where k.LanThi = 2 and q.TenMH = N'Cơ sở dữ liệu'
+and Diem > (
+	select MAX(Diem)
+	from KETQUA k inner join DMMH d on k.MaMH = d.MaMH
+	where LanThi = 1 and d.TenMH = N'Cơ sở dữ liệu'
+	)
+--6.8
+--cho biết nhung sv co hoc bong lon hon tat ca hoc bong cua nhung sv khoa AV
+select *
+from DMSV
+where HocBong > (
+	select Max(HocBong)
+	from DMSV s inner join DMKHOA k on s.MaKH = k.MaKhoa
+	where k.TenKhoa = N'Anh Văn'
+)
+--------------------------------------------------------
+--7.1
+--Cho biết những sinh viên có cùng nơi sinh vs Hải
+select *
+from DMSV
+where NoiSinh in (
+	select NoiSinh
+	from DMSV
+	where TenSV like N'Hải'
+	)
+and TenSV not like N'Hải'
+--7.2
+--Cho biết những sinh viên có hoc bổng lớn hơn tất cả hoc bổng của sv Khoa AV
+select * 
+from DMSV
+where HocBong > All (
+	select HocBong
+	from DMSV s inner join DMKHOA k on s.MaKH = k.MaKHOA
+	where k.TenKhoa = N'Anh Văn'
+	)
+--7.3
+--Cho biet những sinh viên có hoc bổng lớn hơn bất kì hoc bổng của sv khoa AV
+select * 
+from DMSV
+where HocBong > Any (
+	select HocBong
+	from DMSV s inner join DMKHOA k on s.MaKH = k.MaKHOA
+	where k.TenKhoa = N'Anh Văn'
+	)
+--7.4
+
+select *
+from DMSV s inner join KETQUA k on s.MaSV = k.MaSV inner join DMMH q on q.MaMH = k.MaMH
+where k.LanThi = 2 and q.TenMH = N'Cơ sở dữ liệu'
+and Diem > All(
+	select Diem
+	from KETQUA k inner join DMMH d on k.MaMH = d.MaMH
+	where LanThi = 1 and d.TenMH = N'Cơ sở dữ liệu'
+	)
+--7.5
+--Với mỗi sinh viên cho biết điểm thi cao nhất môn tương ứng
+select *
+from DMSV s inner join KETQUA k on s.MaSV = k.MaSV inner join DMMH m on k.MaMH = m.MaMH
+where k.Diem >= All (
+	select Diem
+	from KETQUA k1
+	where s.MaSV = k1.MaSV
+	) 
+--7.6
+--Cho biết môn hoc nào có nhiều sinh viên hoc nhất
+select d.MaMH, d.TenMH, Count(distinct MaSV) as SoSV
+from KETQUA k inner join DMMH d on k.MaMH = d.MaMH
+group by d.MaMH, d.TenMH
+having Count(distinct MaSV) >= All(
+	select Count(distinct MaSV)
+	from KETQUA
+	group by MaMH)
+--7.7
+--Cho biết những khoa có đông sinh viên nam học nhất
+select k.MaKhoa, k.TenKhoa, Count(MaSV) as SoSV
+from DMSV s inner join DMKHOA k on s.MaKH = k.MaKhoa
+where Phai = 0
+group by k.MaKhoa, k.TenKhoa
+having Count(MaSV) >= ALL(
+	select Count(MaSV)
+	from DMSV
+	where Phai = 0
+	group by MaKH
+	)
+--7.8
+--Cho biết khoa nào có đông sinh viên nhận hoc bổng nhất và khoa nào có ít sinh viên nhận
+--học bổng nhất
+select k.MaKhoa, k.TenKhoa, SoSV = Sum(case when HocBong > 0 then 1 else 0 end)
+from DMSV s inner join DMKHOA k on s.MaKH = k.MaKhoa
+group by k.MaKhoa, k.TenKhoa
+having Sum(case when HocBong > 0 then 1 else 0 end) >= all(
+	select Sum(case when HocBong > 0 then 1 else 0 end)
+	from DMSV
+	group by MaKH
+	) or Sum(case when HocBong > 0 then 1 else 0 end) <= all(
+	select Sum(case when HocBong > 0 then 1 else 0 end)
+	from DMSV
+	group by MaKH
+	)
+
+--7.9
+--Cho biết môn nào có nhiều sinh viên rớt lần một nhất
+select m.MaMH, m.TenMH, SoSV = Sum(case when k.Diem < 5 then 1 else 0 end)
+from KETQUA k inner join DMMH m on k.MaMH = m.MaMH
+where LanThi = 1
+group by m.MaMH, m.TenMH
+having Sum(case when k.Diem < 5 then 1 else 0 end) >= All(
+	select SoSV = Sum(case when Diem < 5 then 1 else 0 end)
+	from KETQUA
+	where LanThi = 1
+	group by MaMH
+	)
+--7.10
+--cho biết 3 sinh viên có hoc nhiều môn nhất
+SELECT TOP 3 s.MaSV, HoSV, TenSV, COUNT(DISTINCT(MaMH)) as SoMon
+FROM DMSV s, KETQUA k
+WHERE s.MASV = k.MASV
+GROUP BY s.MaSV, HoSV, TenSV
+ORDER BY COUNT(DISTINCT(MaMH)) DESC
+------------------------------------------
+--30/10/2017
+--8.1
+--Cho biết sinh viên chưa thi môn CSDL
+select *
+from DMSV
+where MaSV not in (select MaSV
+					from KETQUA k inner join DMMH m on k.MaMH = m.MaMH
+					where m.TenMH = N'Cơ sở dữ liệu')
+					
+--8.2
+--Cho biết sinh viên nào không dự thi lần 1 mà có dự thi lần 2
+select *
+from DMSV s inner join KETQUA k on s.MaSV = k.MaSV
+where s.MaSV not in( select s.MaSV
+from KETQUA k inner join DMSV s on k.MaSV = s.MaSV
+where k.LanThi = 1)
+and k.LanThi = 2
+
+--8.3
+--cho biết môn nào không có sinh viên khoa anh văn học
+select distinct m.*
+from DMMH m inner join KETQUA k on m.MaMH = k.MaMH
+where m.MaMH not in ( select q.MaMH
+						from DMSV s inner join DMKHOA k on s.MaKH = k.MaKhoa inner join KETQUA q on s.MaSV = q.MaSV
+						where TenKhoa = N'Anh Văn')
+						
+						
+--8.4
+--cho biết những sinh viên khoa anh văn chưa học môn văn phạm
+select *
+from DMSV
+where MaSV not in (select s.MaSV
+					from DMSV s inner join DMKHOA k on s.MaKH = k.MaKhoa inner join KETQUA q on s.MaSV = q.MaSV
+					where TenKhoa = N'Anh Văn' and MaMH in (select MaMH
+															from DMMH
+															where TenMH = N'Văn phạm'))
+and MaKH = 'AV'
+
+--8.5
+--cho biết những môn không có sinh viên rớt ở lần 1
+select d.*
+from DMMH d inner join KETQUA k on d.MaMH = k.MaMH
+where k.MaSV not in( select MaSV
+						from DMMH m inner join KETQUA k on m.MaMH = k.MaMH
+						where LanThi = 1 and k.Diem < 5)
+and LanThi = 1
+
+--8.6
+--cho biết những khoa không có sinh viên nữ
+select *
+from DMKHOA 
+where MaKhoa not in ( select k.MaKhoa
+					   from DMSV s inner join DMKHOA k on s.MaKH = k.MaKhoa
+					   where s.Phai = 1)
+--8.7
+--Cho biết những sinh viên
+--học khoa anh văn có hoc bổng
+--hoặc chưa bao giờ rớt
+select s.MaSV, s.HoSV, S.TenSV, s.MaKH
+from DMSV s inner join DMKHOA k on s.MaKH = k.MaKhoa
+where k.TenKhoa = N'Anh Văn' and s.HocBong > 0
+or s.MaSV not in (select MaSV from KETQUA where Diem < 5)
+
+--8.8
+--cho biết những sinh viên: không có học bổng hoặc rớt môn học (sv thi lần 1
+--bị rớt và không thi lần 2 và sinh viên thi lần 2 bị rớt)
+
+select s.MaSV
+from DMSV s inner join KETQUA k on s.MaSV = k.MaSV
+where (LanThi = 2 and Diem < 5) or s.MaSV in(
+		select m.MaSV
+		from (
+			select s.MaSV, ThiLan2 = SUM(case LanThi when 2 then 1 else 0 end), ThiLan1 = SUM(case LanThi when 1 then 1 else 0 end)
+			from DMSV s inner join KETQUA k on s.MaSV = k.MaSV
+			group by s.MaSV
+			having Sum(case LanThi when 2 then 1 else 0 end) = 0 and SUM(case LanThi when 1 then 1 else 0 end) > 0
+			) as m
+		)
+-------------------------------------------------
+--9.1
+SELECT *
+FROM DMMH K1
+WHERE NOT EXISTS (SELECT * FROM DMSV S
+WHERE NOT EXISTS (SELECT *
+FROM KETQUA K2
+WHERE K2.MaSV = S.MaSV
+AND K2.MaMH = K1.MaMH))
+
+--9.2
+--Cho biết những sinh viên học môn giống với sinh viên có mã số A02
+
+select *
+from DMMH m
+where not exists (select *
+from KETQUA k1
+where MaSV = 'A02' and m.MaMH = k1.MaMH)
+
+select *
+from DMSV s1
+where not exists ( select * from DMMH m1
+where not exists (select * 
+from KETQUA k1
+where k1.MaSV = 'A02' and m1.MaMH = k1.MaMH))
