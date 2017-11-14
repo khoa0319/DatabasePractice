@@ -1,7 +1,6 @@
 --BT3 Cơ sở dữ liệu hàng không
 create database HANGKHONG
 use HANGKHONG
-GO;
 
 create table CHUYENBAY
 (
@@ -34,7 +33,7 @@ create table CHUNGNHAN
 	MaMB char(3) references MAYBAY(MaMB),
 	Primary key(MaNV, MaMB)
 )
-GO;
+
 ----------------------------------------
 insert into CHUYENBAY
 values('VN431', 'SGN', 'CAH', 3693,'05:55', '06:55', 236)
@@ -70,7 +69,7 @@ insert into CHUYENBAY
 values('VN741', 'HAN', 'PXU', 395,'06:30', '08:30', 120)
 insert into CHUYENBAY
 values('VN474', 'PXU', 'PQC', 1586,'08:40', '11:20', 102)
-GO;
+--------------------------------------------------------
 
 insert into MAYBAY
 values('747', 'Boeing 747 - 400', 13488)
@@ -92,7 +91,7 @@ insert into MAYBAY
 values('727', 'Boeing 727', 2406)
 insert into MAYBAY
 values('154', 'Tupolev 154', 6565) 
-GO;
+----------------------------------------
 
 insert into NHANVIEN
 values('242518965', 'Tran Van Son', 120433)
@@ -142,8 +141,7 @@ insert into NHANVIEN
 values('574489457', 'Bui Van Lap', 20)
 insert into NHANVIEN
 values('269734834', 'Nguyen Huy Hung', 20000000)
-select * from NHANVIEN where MaNV = '269734834'
-GO;
+------------------------------------------------
 
 insert into CHUNGNHAN
 values('567354612', '747')
@@ -231,4 +229,129 @@ insert into CHUNGNHAN
 values('011564812', '757')
 insert into CHUNGNHAN
 values('574489457', '154')
-delete from CHUNGNHAN
+--delete from CHUNGNHAN
+--------------------------------
+--1 cho biết các chuyến bay xuất phát từ SGN đi Buôn Mê Thuộc
+select * from CHUYENBAY
+where GaDi = 'SGN' and GaDen = 'BMV'
+
+--2 có bao nhiêu chuyến bay xuất phát từ Sài Gòn
+select COUNT(*) as SoCB
+from CHUYENBAY
+where GaDi = 'SGN'
+
+--3 cho biết tổng số lương phải trả cho các nhân viên
+select SUM(Luong) as TongSoLuong
+from NHANVIEN
+
+--4 Cho biết nhân viên có thể lái máy bay 747
+select n.*, c.MaMB 
+from CHUNGNHAN c inner join NHANVIEN n on c.MaNV = n.MaNV
+where c.MaMB = 747
+
+--5 cho biết các chuyến bay có thể thưc hiện bởi máy bay airbus A320
+select *
+from CHUYENBAY c
+where exists ( select *
+				from MAYBAY m
+				where m.MaMB = (select MaMB from MAYBAY where Loai = 'Airbus A320')
+				and m.TamBay >= c.DoDai)
+
+--6 Cho biết các phi công vừa lái được máy bay Boeing vừa lái được máy bay Airbus
+select *
+from NHANVIEN
+where MaNV in ( select distinct MaNV from CHUNGNHAN
+				where MaMB in ( select MaMB
+								from MAYBAY
+								where Loai like 'Boeing%' or Loai like 'Airbus%'))
+
+--7 Cho biết các loại máy bay có thể thực hiện được chuyến bay VN280
+select * 
+from MAYBAY
+where TamBay >= ( select DoDai from CHUYENBAY where MaCB = 'VN280' )
+
+--8 Với mỗi loại máy bay có phi công lái, cho biết mã số, loại máy bay
+--và tổng số phi công có thể lái máy bay đó
+select c.MaMB, m.Loai, COUNT(*) as TongSoPhiCong
+from NHANVIEN n inner join CHUNGNHAN c on n.MaNV = c.MaNV inner join MAYBAY m on c.MaMB = m.MaMB
+group by c.MaMB, m.Loai
+
+--9 giả sử 1 hành khách muốn đi thẳng từ ga A đến ga B rồi quay về ga A. Cho biết đường bay nào
+--có thể đáp ứng được nhu cầu này
+select c.*
+from CHUYENBAY c inner join CHUYENBAY c1 on c.GaDen = c1.GaDi and c.GaDi = c1.GaDen
+
+--10 với mỗi địa điểm xuất phát cho biết bao nhiêu chuyến bay khởi hành trước 12:00
+select GaDi, COUNT(*) as SoCB
+from CHUYENBAY
+where GioDi <= '12:00'
+group by GaDi
+
+--11 Cho biết những phi công lái được 3 loại máy bay
+select *
+from NHANVIEN
+where MaNV in ( select c.MaNV
+				from CHUNGNHAN c inner join MAYBAY b on c.MaMB = b.MaMB
+				group by c.MaNV
+				having COUNT(b.MaMB) = 3 )
+
+--12 với mỗi phi công có thể lại dc nhiều hơn 3 loại máy bay, cho biết mã phi công
+--và tầm bay lớn nhất của các loại máy bay mà phi công có thể lái
+select c1.MaNV, b1.*
+from CHUNGNHAN c1 inner join MAYBAY b1 on c1.MaMB = b1.MaMB
+where c1.MaNV in ( select n.MaNV
+					from NHANVIEN n
+					where (select COUNT(*) from CHUNGNHAN c where c.MaNV = n.MaNV) >= 3)
+
+--13 Cho biết những phi công có thể lái nhiều loại máy bay nhất
+select *
+from NHANVIEN n
+where (select COUNT(*) from CHUNGNHAN c where c.MaNV = n.MaNV) >= (select COUNT(*) from MAYBAY)
+
+--14 cho biết những phi công có thể lái ít loại máy bay nhất
+select *
+from NHANVIEN n
+where (select COUNT(*) from CHUNGNHAN c where n.MaNV = c.MaNV group by c.MaNV) = 1
+
+--15 cho biết những nhân viên không phải phi công
+select *
+from NHANVIEN n
+where not exists (select * from CHUNGNHAN c where n.MaNV = c.MaNV)
+
+--16 cho biết những phi công có lương cao nhất
+select *
+from NHANVIEN n
+where (select COUNT(*) from NHANVIEN n2 where n.Luong <= n2.Luong) <= 1
+
+
+-- 17 cho biết những tiếp viên có lương cao nhì
+select *
+from  NHANVIEN nv
+where MaNV in ( select n.MaNV
+				from NHANVIEN n
+				where not exists (select * from CHUNGNHAN c where n.MaNV = c.MaNV))
+and (select Count(*) 
+		from NHANVIEN n1 
+		where n1.MaNV in (select n.MaNV
+							from NHANVIEN n
+							where not exists (select * from CHUNGNHAN c where n.MaNV = c.MaNV))
+		and nv.Luong < n1.Luong ) =1
+
+--18 cho biết tổng số lương phải trả cho các phi công
+select SUM(n.Luong) as TongSoLuong
+from NHANVIEN n
+where exists(select * from CHUNGNHAN c where c.MaNV = n.MaNV)
+
+--19 tìm các chuyến bay có thể thực hiện bởi các loại máy bay Boeing
+select *
+from CHUYENBAY 
+where DoDai < (select MIN(TamBay)
+			   from MAYBAY mb
+			   where Loai like 'Boeing%')
+
+--20 cho biết các máy bay dc dùng để thực hiện chuyến bay từ SG (SGN) tới Huế (HUI)
+select *
+from MAYBAY
+where TamBay >= (select DoDai
+				 from CHUYENBAY
+				 where GaDi = 'SGN' and GaDen = 'HUI')
