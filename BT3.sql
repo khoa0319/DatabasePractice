@@ -355,3 +355,74 @@ from MAYBAY
 where TamBay >= (select DoDai
 				 from CHUYENBAY
 				 where GaDi = 'SGN' and GaDen = 'HUI')
+
+--21 tìm các chuyến bay có thể lái bởi các phi công có lương lớn hơn 100000
+
+select *
+from CHUYENBAY
+where DoDai < (select MIN(TamBay) 
+				from MAYBAY
+				where MaMB in (select distinct c.MaMB
+								from CHUNGNHAN c inner join NHANVIEN n on c.MaNV = n.MaNV
+								where n.Luong > 100000))
+
+--22 cho biết các phi công có lương nhỏ hơn chi phí thấp nhất của đường bay từ Sài Gòn (SGN)
+-- đến Buôn Mê Thuộc (BMV)
+select *
+from NHANVIEN n inner join CHUNGNHAN c on n.MaNV = c.MaNV
+where exists (select * from NHANVIEN n1 where n1.MaNV = n.MaNV
+				and n1.Luong < (select MIN(ChiPhi)
+								from CHUYENBAY
+								where GaDi = 'SGN' and GaDen = 'BMV'))
+
+--23 cho biết những nhân viên có lương cao nhất hay cao nhì
+select *
+from NHANVIEN n
+where (select COUNT(*) from NHANVIEN n1 where n.Luong <= n1.Luong) <=2
+
+--24 cho biết lương của các nhân viên không phải phi công và có lương lớn hơn
+--trung bình của tất cả phi công
+select *
+from NHANVIEN n
+where not exists(select * from CHUNGNHAN c where n.MaNV = c.MaNV)
+and n.Luong >= (select AVG(n1.Luong) 
+				from NHANVIEN n1 inner join CHUNGNHAN c1 on n1.MaNV = c1.MaNV)
+
+--25 cho biết các phi công có thể lái máy bay có tầm lớn hơn 4800km
+--nhưng không có chứng nhận máy bay boeing
+select * 
+from NHANVIEN n inner join CHUNGNHAN c on n.MaNV = c.MaNV inner join MAYBAY m on c.MaMB = m.MaMB
+where c.MaMB not in (select MaMB from MAYBAY where Loai like 'Boeing%')
+and m.TamBay > 4800
+
+--26 cho biết những phi công lái ít nhất 3 loại máy bay có tầm bay xa hơn 3200km
+select *
+from NHANVIEN n
+where (select COUNT(*) 
+		from CHUNGNHAN c
+		where c.MaMB in (select MaMB from MAYBAY where TamBay > 3200)
+		and c.MaNV = n.MaNV) >= 3
+
+--27 với mỗi phi công, cho biết mã số, tên nhân viên và tổng số loại máy bay
+--mà phi công đó có thể lái
+select n.MaNV, n.Ten, COUNT(c.MaMB) as SoMB
+from NHANVIEN n inner join CHUNGNHAN c on n.MaNV = c.MaNV
+group by n.MaNV, n.Ten
+
+--28 với mỗi phi công cho biết mã số, tên và tổng số loại máy bay Boeing
+--mà phi công đó có thể lái
+select n.MaNV, n.Ten, COUNT(b.MaMB) as SoMB
+from NHANVIEN n inner join CHUNGNHAN c on n.MaNV = c.MaNV left outer join MAYBAY b on c.MaMB = b.MaMB and b.Loai like 'Boeing%'
+group by n.MaNV, n.Ten
+
+--29 với mỗi loại máy bay, cho biết loại máy bay và tổng số phi công có thể lái
+--loại máy bay đó
+select b.MaMB, b.Loai, COUNT(c.MaNV) as SoPC
+from MAYBAY b inner join CHUNGNHAN c on b.MaMB = c.MaMB
+group by b.MaMB, b.Loai
+
+--30 với mỗi loại máy bay, cho biết loại máy bay và tổng số chuyến bay
+--không thể thực hiện bởi loại máy bay đó
+select b.Loai, b.MaMB, COUNT(c.DoDai) as SoCB
+from MAYBAY b inner join CHUYENBAY c on b.TamBay < c.DoDai
+group by b.Loai, b.MaMB
