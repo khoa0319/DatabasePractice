@@ -426,3 +426,82 @@ group by b.MaMB, b.Loai
 select b.Loai, b.MaMB, COUNT(c.DoDai) as SoCB
 from MAYBAY b inner join CHUYENBAY c on b.TamBay < c.DoDai
 group by b.Loai, b.MaMB
+
+--31 với mỗi loại máy bay có tầm bay trên 3200km , cho biết tên của loại máy bay và
+--lương trung bình của các phi công có thể lái loại máy bay đó
+
+select b.MaMB, b.Loai, AVG(n.Luong) as Luong
+from MAYBAY b inner join CHUNGNHAN c on b.MaMB = c.MaMB inner join NHANVIEN n on n.MaNV = c.MaNV
+where b.TamBay > 3200
+group by b.MaMB, b.Loai
+
+--32 với mỗi loại máy bay, cho biết loại máy bay và tổng số phi công không lái
+--loại máy bay đó
+
+select b.MaMB, (select COUNT(distinct MaNV ) from CHUNGNHAN) - COUNT(c.MaNV) as SoNV
+from MAYBAY b left outer join CHUNGNHAN c on b.MaMB = c.MaMB
+group by b.MaMB
+
+--33 với mỗi nhân viên cho biết mã số, tên nhân viên và tổng số chuyến bay suất phát
+--từ Sài Gòn mà nhân viên đó có thể lái
+
+select t.MaNV, t.Ten, COUNT(c.DoDai) as SoCB
+from (select n.MaNV, n.Ten, MAX(b.TamBay) as MAXTB
+		from NHANVIEN n inner join CHUNGNHAN c on n.MaNV = c.MaNV inner join MAYBAY b on c.MaMB = b.MaMB
+		group by n.MaNV, n.Ten) t inner join CHUYENBAY c on t.MAXTB >= c.DoDai
+where c.GaDi = 'SGN'
+group by t.MaNV, t.Ten
+--checking
+
+--34 ~ 33
+
+--35 với mỗi chuyến bay cho biết mã số chuyến bay và tổng số loại máy bay CÓ thể thực hiện
+--được chuyến bay đó
+select cb.MaCB, COUNT(distinct b.MaMB) as SoMB
+from CHUYENBAY cb inner join MAYBAY b on cb.DoDai <= b.TamBay
+group by cb.MaCB
+
+--36 với mỗi chuyến bay cho biết mã số chuyến bay và tổng số loại máy bay KHÔNG thể thực hiện
+--được chuyến bay đó
+select cb.MaCB, COUNT(distinct b.MaMB) as SoMB
+from CHUYENBAY cb inner join MAYBAY b on cb.DoDai > b.TamBay
+group by cb.MaCB
+
+--37 cho biết tên các loại máy bay mà tất cả phi công có thể lái đều có lương 
+--lớn hơn 200000
+
+select distinct m.Loai, m.MaMB, n.MaNV
+from NHANVIEN n inner join CHUNGNHAN c on n.MaNV = c.MaNV inner join MAYBAY m on m.MaMB = c.MaMB
+where n.Luong > 200000
+order by m.Loai
+--38 Tìm các phi công có thể lái tất cả các loại máy bay
+select *
+from CHUNGNHAN c
+where not exists (select *
+					from MAYBAY b
+					where not exists ( select * 
+										from CHUNGNHAN c2
+										where c2.MaNV = c.MaNV and c2.MaMB = b.MaMB))
+
+--39 tìm các phi công có thể lái tất cả các loại máy bay Boeing
+
+select *
+from CHUNGNHAN c
+where not exists ( select *
+				   from MAYBAY b
+				   where b.Loai like 'Boeing%' 
+				   and not exists ( select * 
+									 from CHUNGNHAN c2
+									 where c2.MaNV = c.MaNV and c2.MaMB = b.MaMB))
+
+--40 cho biết thông tin tất cả các đường bay mà tất cả các phi công có thể bay trên đó
+--đều có lương lớn hơn 100000
+select cb.MaCB
+from CHUYENBAY cb
+where not exists ( select *
+					from NHANVIEN n inner join CHUNGNHAN c on n.MaNV = c.MaNV
+					where n.Luong > 100000
+					and not exists ( select *
+									 from MAYBAY m inner join CHUNGNHAN c2 on m.MaMB = c2.MaMB
+									 where c2.MaNV = c.MaNV and m.TamBay >= cb.DoDai))
+
