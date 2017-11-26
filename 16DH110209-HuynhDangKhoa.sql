@@ -712,15 +712,53 @@ AND K2.MaMH = K1.MaMH))
 --9.2
 --Cho biết những sinh viên học môn giống với sinh viên có mã số A02
 
-select *
-from DMMH m
-where not exists (select *
-from KETQUA k1
-where MaSV = 'A02' and m.MaMH = k1.MaMH)
+select distinct s.*
+from DMSV s inner join KETQUA k on s.MaSV = k.MaSV
+where k.MaMH in (select MaMH from KETQUA where MaSV = 'A02')
+and s.MaSV <> 'A02'
+								
+
+--9.3
+--Cho biết những sinh viên học môn đúng bằng với sinh viên có mã số A02
 
 select *
-from DMSV s1
-where not exists ( select * from DMMH m1
-where not exists (select * 
-from KETQUA k1
-where k1.MaSV = 'A02' and m1.MaMH = k1.MaMH))
+from DMSV s
+where s.MaSV <> 'A02'
+and not exists( select *
+					from KETQUA k1
+					where k1.MaSV = 'A02' and not exists( select *
+															from KETQUA k2
+															where k2.MaSV = s.MaSV and k2.MaMH = k1.MaMH))
+
+--10.1
+--với mỗi môn học, cho biết có bao nhiêu sinh viên đã học môn đó
+select m.MaMH, m.TenMH, Count(distinct MaSV) as SoSV
+from KETQUA k right join DMMH m on k.MaMH = m.MaMH
+group by m.MaMH, m.TenMH
+
+--10.2
+--với mỗi khoa cho biết có bao nhiêu sinh viên
+select k.MaKhoa, k.TenKhoa, Count(s.MaSV) as SoSV
+from DMKHOA k left join DMSV s on k.MaKhoa = s.MaKH
+group by k.MaKhoa, k.TenKhoa
+
+--10.3
+--với mỗi sinh viên cho biết đã học bao nhiêu môn
+select s.MaSV, s.TenSV, s.HoSV, Count(distinct k.MaMH) as SoMH
+from DMSV s left join KETQUA k on s.MaSV = k.MaSV
+group by s.MaSV, s.TenSV, s.HoSV
+
+--11.1
+create table SinhVien_KetQua
+(
+	MaSV char(10) primary key,
+	HoSV nvarchar(20),
+	TenSV nvarchar(20),
+	SoMH int
+)
+
+insert into SinhVien_KetQua(MaSV, HoSV, TenSV, SoMH)
+	select s.MaSV, s.HoSV, s.TenSV, COUNT(distinct k.MaMH)
+	from KETQUA k inner join DMSV s on k.MaSV = s.MaSV
+	group by s.MaSV, s.HoSV, s.TenSV
+
